@@ -3,8 +3,10 @@ package logrus2logtail
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack/v5"
 	"net/http"
 )
 
@@ -36,13 +38,23 @@ func (h *Hooker) Fire(entry *log.Entry) error {
 	}
 	client := &http.Client{Transport: tr}
 
-	body := bytes.NewReader(buf)
+	var p map[string]interface{} // Decode into Struct
 
-	req, err := http.NewRequest("POST", "https://in.logtail.com", body)
+	err := json.Unmarshal(buf, &p)
+	if err != nil {
+		log.Error("Unmarshall:")
+	}
+
+	b, err := msgpack.Marshal(p)
+	if err != nil {
+		log.Error("MsgPack:", err)
+	}
+
+	req, err := http.NewRequest("POST", "https://in.logtail.com", bytes.NewReader(b))
 	if err != nil {
 		log.Error("Error NewRequest:", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/msgpack")
 	req.Header.Set("Authorization", "Bearer "+h.Token)
 
 	resp, err := client.Do(req)
