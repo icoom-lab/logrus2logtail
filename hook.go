@@ -1,4 +1,4 @@
-package main
+package logrus2logtail
 
 import (
 	"bytes"
