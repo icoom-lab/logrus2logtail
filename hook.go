@@ -43,16 +43,19 @@ func (h *Hooker) Fire(entry *log.Entry) error {
 	err := json.Unmarshal(buf, &p)
 	if err != nil {
 		log.Error("Unmarshall:")
+		return err
 	}
 
 	b, err := msgpack.Marshal(p)
 	if err != nil {
 		log.Error("MsgPack:", err)
+		return err
 	}
 
 	req, err := http.NewRequest("POST", "https://in.logtail.com", bytes.NewReader(b))
 	if err != nil {
 		log.Error("Error NewRequest:", err)
+		return err
 	}
 	req.Header.Set("Content-Type", "application/msgpack")
 	req.Header.Set("Authorization", "Bearer "+h.Token)
@@ -60,6 +63,7 @@ func (h *Hooker) Fire(entry *log.Entry) error {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Error Do:", err)
+		return err
 	}
 	defer resp.Body.Close()
 
